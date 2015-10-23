@@ -225,9 +225,10 @@ def keyfile(module, user, write=False, path=None, manage_dir=True):
 def parseoptions(module, options):
     '''
     reads a string containing ssh-key options
-    and returns a dictionary of those options
+    and returns a list of those options
+    where the list elements are either a string or a tuple (optionname, optionvalue)
     '''
-    options_dict = keydict() #ordered dict
+    options_list = []
     if options:
         try:
             # the following regex will split on commas while
@@ -237,13 +238,13 @@ def parseoptions(module, options):
             for part in parts:
                 if "=" in part:
                     (key, value) = part.split("=", 1)
-                    options_dict[key] = value
+                    options_list.append((key, value))
                 elif part != ",":
-                    options_dict[part] = None
+                    options_list.append(part)
         except:
             module.fail_json(msg="invalid option string: %s" % options)
 
-    return options_dict
+    return options_list
 
 def parsekey(module, raw_key):
     '''
@@ -329,11 +330,11 @@ def writekeys(module, filename, keys):
                 option_str = ""
                 if options:
                     option_strings = []
-                    for option_key in options.keys():
-                        if options[option_key]:
-                            option_strings.append("%s=%s" % (option_key, options[option_key]))
+                    for option_element in options:
+                        if isinstance(option_element, tuple):
+                            option_strings.append("%s=%s" % (option_element[0], option_element[1]))
                         else:
-                            option_strings.append("%s" % option_key)
+                            option_strings.append("%s" % option_element)
 
                     option_str = ",".join(option_strings)
                     option_str += " "
